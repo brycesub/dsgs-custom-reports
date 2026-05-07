@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Reports</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      padding: 40px 48px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 28px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .drop-zone.drag-over {
+      border-color: #4472C4;
+      background: #eef2fb;
+    }
+
+    .drop-zone.has-file {
+      border-color: #16a34a;
+      background: #f0fdf4;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #9ca3af;
+    }
+
+    .drop-zone.has-file .drop-icon { color: #16a34a; }
+
+    .drop-label {
+      font-size: 0.9rem;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .drop-hint {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .file-name {
+      font-size: 0.85rem;
+      color: #16a34a;
+      font-weight: 500;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background: #4472C4;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover:not(:disabled) { background: #3461b0; }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .status {
+      margin-top: 16px;
+      font-size: 0.875rem;
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    .status.error { color: #dc2626; }
+    .status.loading { color: #6b7280; }
+
+    .download-link {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #15803d;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .download-link:hover { background: #dcfce7; }
+    .download-link.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>GOH Plans Report</h1>
+    <p class="subtitle">Upload a Plans CSV export to generate the Excel report.</p>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".csv" />
+      <div class="drop-icon" id="dropIcon">📄</div>
+      <div class="drop-label" id="dropLabel">Drag &amp; drop a CSV file here</div>
+      <div class="drop-hint">or click to browse</div>
+      <div class="file-name" id="fileName"></div>
+    </div>
+
+    <button class="btn" id="generateBtn" disabled>Generate Report</button>
+
+    <div class="status" id="status"></div>
+    <a class="download-link" id="downloadLink" href="#" download="reports.zip">
+      ⬇ Download reports.zip
+    </a>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const dropIcon = document.getElementById("dropIcon");
+    const dropLabel = document.getElementById("dropLabel");
+    const fileName = document.getElementById("fileName");
+    const generateBtn = document.getElementById("generateBtn");
+    const status = document.getElementById("status");
+    const downloadLink = document.getElementById("downloadLink");
+
+    let selectedFile = null;
+
+    function setFile(file) {
+      if (!file || !file.name.toLowerCase().endsWith(".csv")) {
+        status.textContent = "Please select a .csv file.";
+        status.className = "status error";
+        return;
+      }
+      selectedFile = file;
+      fileName.textContent = file.name;
+      dropIcon.textContent = "✅";
+      dropLabel.textContent = "File selected";
+      dropZone.classList.add("has-file");
+      generateBtn.disabled = false;
+      status.textContent = "";
+      status.className = "status";
+      downloadLink.classList.remove("visible");
+    }
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("drag-over");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    generateBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+
+      generateBtn.disabled = true;
+      downloadLink.classList.remove("visible");
+      status.textContent = "Generating report…";
+      status.className = "status loading";
+
+      const formData = new FormData();
+      formData.append("csv_file", selectedFile);
+
+      try {
+        const res = await fetch("/generate", { method: "POST", body: formData });
+
+        if (!res.ok) {
+          const msg = await res.text();
+          status.textContent = msg || "Something went wrong.";
+          status.className = "status error";
+          generateBtn.disabled = false;
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.classList.add("visible");
+        status.textContent = "";
+        status.className = "status";
+      } catch (err) {
+        status.textContent = "Network error — is the server running?";
+        status.className = "status error";
+      }
+
+      generateBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>
