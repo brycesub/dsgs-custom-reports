@@ -1,0 +1,7 @@
+.venv/
+input/
+__pycache__/
+*.pyc
+.git/
+.pre-commit-config.yaml
+requirements-dev.txt
