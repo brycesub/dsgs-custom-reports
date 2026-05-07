@@ -1,4 +1,5 @@
 import io
+import zipfile
 from flask import Flask, render_template, request, send_file
 from reports.goh_plans import generate
 
@@ -20,14 +21,28 @@ def generate_report():
         return "Please upload a CSV file.", 400
 
     try:
-        zip_bytes = generate(f.read())
+        results = generate(f.read())
     except ValueError as e:
         return str(e), 400
     except Exception as e:
         return f"Error generating report: {e}", 500
 
+    if len(results) == 1:
+        client, xlsx_bytes = results[0]
+        return send_file(
+            io.BytesIO(xlsx_bytes),
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=f"{client}_report.xlsx",
+        )
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for client, xlsx_bytes in results:
+            zf.writestr(f"{client}_report.xlsx", xlsx_bytes)
+    zip_buf.seek(0)
     return send_file(
-        io.BytesIO(zip_bytes),
+        zip_buf,
         mimetype="application/zip",
         as_attachment=True,
         download_name="reports.zip",

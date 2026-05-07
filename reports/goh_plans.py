@@ -1,6 +1,5 @@
 import io
 import re
-import zipfile
 from datetime import date, datetime
 
 import pandas as pd
@@ -117,7 +116,7 @@ def _build_worksheet(ws, df):
         ws.column_dimensions[col_letter].width = min(max_len + 2, 50)
 
 
-def generate(csv_bytes: bytes) -> bytes:
+def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     df = pd.read_csv(io.BytesIO(csv_bytes))
 
     missing = [c for c in list(COLUMN_MAP.keys()) + ["Client"] if c not in df.columns]
@@ -140,31 +139,28 @@ def generate(csv_bytes: bytes) -> bytes:
     out = out.sort_values(["_status_rank", "_task_date"], na_position="last")
     out = out[out["Year"].astype(int) >= date.today().year]
 
-    zip_buf = io.BytesIO()
-    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for client, client_df in out.groupby("_client"):
-            wb = openpyxl.Workbook()
-            wb.remove(wb.active)
+    results = []
+    current_year = date.today().year
+    future_label = f"{current_year + 1}+"
 
-            current_year = date.today().year
-            future_label = f"{current_year + 1}+"
+    for client, client_df in out.groupby("_client"):
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)
 
-            cur_df = client_df[client_df["Year"].astype(int) == current_year]
-            fut_df = client_df[client_df["Year"].astype(int) > current_year]
+        cur_df = client_df[client_df["Year"].astype(int) == current_year]
+        fut_df = client_df[client_df["Year"].astype(int) > current_year]
 
-            ws_cur = wb.create_sheet(title=str(current_year))
-            _build_worksheet(ws_cur, cur_df[OUTPUT_COLUMNS])
+        ws_cur = wb.create_sheet(title=str(current_year))
+        _build_worksheet(ws_cur, cur_df[OUTPUT_COLUMNS])
 
-            if not fut_df.empty:
-                ws_fut = wb.create_sheet(title=future_label)
-                _build_worksheet(ws_fut, fut_df[OUTPUT_COLUMNS])
+        if not fut_df.empty:
+            ws_fut = wb.create_sheet(title=future_label)
+            _build_worksheet(ws_fut, fut_df[OUTPUT_COLUMNS])
 
-            wb.active = wb[str(current_year)]
+        wb.active = wb[str(current_year)]
 
-            xlsx_buf = io.BytesIO()
-            wb.save(xlsx_buf)
-            xlsx_buf.seek(0)
-            zf.writestr(f"{client}_report.xlsx", xlsx_buf.read())
+        xlsx_buf = io.BytesIO()
+        wb.save(xlsx_buf)
+        results.append((client, xlsx_buf.getvalue()))
 
-    zip_buf.seek(0)
-    return zip_buf.read()
+    return results
