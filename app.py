@@ -1,6 +1,8 @@
 import io
 import zipfile
+
 from flask import Flask, render_template, request, send_file
+
 from reports.goh_plans import generate
 
 app = Flask(__name__)

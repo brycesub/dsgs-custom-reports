@@ -2,9 +2,9 @@ import io
 import re
 from datetime import date, datetime
 
-import pandas as pd
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
+import pandas as pd
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 STATUS_ORDER = [
@@ -34,8 +34,16 @@ COLUMN_MAP = {
 }
 
 OUTPUT_COLUMNS = [
-    "Year", "Funder", "Fund", "Purpose", "Status",
-    "Request", "Award", "Notif Expected", "Notif Received", "Next Task/Deadline",
+    "Year",
+    "Funder",
+    "Fund",
+    "Purpose",
+    "Status",
+    "Request",
+    "Award",
+    "Notif Expected",
+    "Notif Received",
+    "Next Task/Deadline",
 ]
 
 HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
