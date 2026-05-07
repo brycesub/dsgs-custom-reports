@@ -71,18 +71,6 @@ def _parse_date(val):
     return None
 
 
-def _extract_task_date(val):
-    if not val or pd.isna(val):
-        return None
-    m = re.search(r"(\d{2}/\d{2}/\d{4})", str(val))
-    if m:
-        try:
-            return datetime.strptime(m.group(1), "%m/%d/%Y")
-        except ValueError:
-            return None
-    return None
-
-
 def _build_worksheet(ws, df):
     for col_idx, header in enumerate(OUTPUT_COLUMNS, 1):
         cell = ws.cell(row=1, column=col_idx, value=header)
@@ -142,9 +130,7 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
 
     status_rank = {s: i for i, s in enumerate(STATUS_ORDER)}
     out["_status_rank"] = out["Status"].map(status_rank).fillna(len(STATUS_ORDER))
-    out["_task_date"] = out["Next Task/Deadline"].apply(_extract_task_date)
-
-    out = out.sort_values(["_status_rank", "_task_date"], na_position="last")
+    out = out.sort_values(["_status_rank", "Fund"], na_position="last")
     out = out[out["Year"].astype(int) >= date.today().year]
 
     results = []
