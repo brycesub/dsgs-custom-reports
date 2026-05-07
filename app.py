@@ -3,7 +3,7 @@ import zipfile
 
 from flask import Flask, render_template, request, send_file
 
-from reports.goh_plans import generate
+from reports.plans import generate
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB upload limit
