@@ -40,6 +40,8 @@ Flask app (`app.py`) with two routes: `POST /generate/plans` and `POST /generate
 
 Report logic lives in `reports/plans.py` and `reports/pipeline.py`. Each module exposes a single `generate()` function that takes `csv_bytes` (and `filename` for pipeline) and returns the processed data. `app.py` only handles HTTP concerns; all CSV parsing, sorting, and Excel building is in the report modules.
 
+Shared Excel utilities (header styling, column autofit, date parsing) live in `reports/_utils.py` — import from there rather than duplicating.
+
 ### plans report
 - Input CSV must have a `Client` column — one `.xlsx` is produced per unique client value. If multiple clients, `app.py` zips them.
 - Rows filtered to current year and forward; split into two sheets: `{current_year}` (active tab) and `{current_year+1}+`.
@@ -51,7 +53,7 @@ Report logic lives in `reports/plans.py` and `reports/pipeline.py`. Each module 
 - Download filename: `Pipeline_{client}_{date}.xlsx`.
 
 ### adding a new report
-1. Create `reports/<name>.py` with a `generate()` function.
+1. Create `reports/<name>.py` with a `generate()` function; import shared helpers from `reports/_utils.py`.
 2. Add a `POST /generate/<name>` route in `app.py`.
 3. Add an upload card to `templates/index.html` and wire it to `initUploadArea()` with the new endpoint.
 
