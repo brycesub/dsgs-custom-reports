@@ -113,7 +113,13 @@ def _build_worksheet(ws, df):
 
 
 def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
-    df = pd.read_csv(io.BytesIO(csv_bytes))
+    try:
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+    except pd.errors.ParserError:
+        raise ValueError("This file couldn't be read as a CSV — please check the format.")
+
+    if df.empty:
+        raise ValueError("The uploaded file has no data rows.")
 
     missing = [c for c in list(COLUMN_MAP.keys()) + ["Client"] if c not in df.columns]
     if missing:
@@ -132,6 +138,11 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     out["_status_rank"] = out["Status"].map(status_rank).fillna(len(STATUS_ORDER))
     out = out.sort_values(["_status_rank", "Fund"], na_position="last")
     out = out[out["Year"].astype(int) >= date.today().year]
+    if out.empty:
+        raise ValueError(
+            f"No rows match {date.today().year} or later — "
+            "please check the file contains current data."
+        )
 
     results = []
     current_year = date.today().year

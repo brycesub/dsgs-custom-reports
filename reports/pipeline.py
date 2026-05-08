@@ -33,14 +33,27 @@ def _parse_date(val):
     return None
 
 
+_PIPELINE_FILENAME_RE = re.compile(r"^Pipeline \d{8} .+\.csv$", re.IGNORECASE)
+
+
 def _extract_client(filename: str) -> str:
+    if not _PIPELINE_FILENAME_RE.match(filename):
+        raise ValueError(
+            f"Filename must match 'Pipeline YYYYMMDD ClientName.csv' — got: {filename!r}"
+        )
     stem = re.sub(r"\.csv$", "", filename, flags=re.IGNORECASE)
     parts = stem.split(" ", 2)
-    return parts[2] if len(parts) >= 3 else stem
+    return parts[2]
 
 
 def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
-    df = pd.read_csv(io.BytesIO(csv_bytes))
+    try:
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+    except pd.errors.ParserError:
+        raise ValueError("This file couldn't be read as a CSV — please check the format.")
+
+    if df.empty:
+        raise ValueError("The uploaded file has no data rows.")
 
     missing = [c for c in COLUMN_MAP if c not in df.columns]
     if missing:
