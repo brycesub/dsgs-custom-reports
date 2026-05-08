@@ -1,5 +1,19 @@
+# Python
 venv/
 .venv/
-input/
 __pycache__/
 *.pyc
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# Customer data (real input files for manual smoke-testing)
+input/
+
+# Environment / secrets
+.env
+.env.local
+
+# Editor / tooling
+.claude/

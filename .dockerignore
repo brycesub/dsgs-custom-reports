@@ -1,7 +1,26 @@
+# Python
+venv/
 .venv/
-input/
 __pycache__/
 *.pyc
-.git/
-.pre-commit-config.yaml
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# Tests (not needed at runtime)
+tests/
+
+# Customer data
+input/
+
+# Dev dependencies / tooling
 requirements-dev.txt
+.pre-commit-config.yaml
+
+# Version control / CI
+.git/
+.github/
+
+# Local tooling settings
+.claude/
