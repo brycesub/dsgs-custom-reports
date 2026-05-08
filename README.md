@@ -110,7 +110,7 @@ Extra columns in the CSV are ignored.
 Examples of valid filenames:
 ```
 Pipeline 20260508 HS.csv
-Pipeline 20260508 Goodspeed Opera House.csv
+Pipeline 20260508 GOH.csv
 ```
 
 **Input:** A CSV export with at least these columns:
