@@ -149,6 +149,14 @@
 
     .download-link:hover { background: #dcfce7; }
     .download-link.visible { display: block; }
+
+    .subtitle code {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.8rem;
+      background: #f3f4f6;
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
   </style>
 </head>
 <body>
@@ -173,7 +181,7 @@
 
     <div class="card">
       <h1>Pipeline Report</h1>
-      <p class="subtitle">Upload a Pipeline CSV export to generate the Excel report.</p>
+      <p class="subtitle">Upload a Pipeline CSV export to generate the Excel report. Filename must be in the format <code>Pipeline YYYYMMDD ClientName.csv</code>.</p>
 
       <div class="drop-zone" id="pipelineDropZone">
         <input type="file" id="pipelineFileInput" accept=".csv" />
