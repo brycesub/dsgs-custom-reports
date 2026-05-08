@@ -28,11 +28,14 @@ Install pre-commit hooks: `.venv/bin/pre-commit install`
 # Auto-fix lint and format
 .venv/bin/ruff check --fix . && .venv/bin/ruff format .
 
+# Run tests
+.venv/bin/pytest tests/ -v
+
 # Docker (LAN deployment)
 docker compose up --build
 ```
 
-There are no automated tests.
+Tests live in `tests/`. Fixtures are synthetic inline CSVs — the real customer files in `input/` (gitignored) are for manual smoke-testing only. Date-sensitive logic is tested by mocking `date.today()` to a fixed date.
 
 ## Architecture
 
