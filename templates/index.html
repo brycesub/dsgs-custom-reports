@@ -12,8 +12,17 @@
       background: #f0f2f5;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .page {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
     }
 
     .card {
@@ -143,113 +152,159 @@
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Custom Instrumentl Plans Report</h1>
-    <p class="subtitle">Upload a Plans CSV export to generate the Excel report.</p>
+  <div class="page">
 
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".csv" />
-      <div class="drop-icon" id="dropIcon">📄</div>
-      <div class="drop-label" id="dropLabel">Drag &amp; drop a CSV file here</div>
-      <div class="drop-hint">or click to browse</div>
-      <div class="file-name" id="fileName"></div>
+    <div class="card">
+      <h1>Plans Report</h1>
+      <p class="subtitle">Upload a Plans CSV export to generate the Excel report.</p>
+
+      <div class="drop-zone" id="plansDropZone">
+        <input type="file" id="plansFileInput" accept=".csv" />
+        <div class="drop-icon" id="plansDropIcon">📄</div>
+        <div class="drop-label" id="plansDropLabel">Drag &amp; drop a CSV file here</div>
+        <div class="drop-hint">or click to browse</div>
+        <div class="file-name" id="plansFileName"></div>
+      </div>
+
+      <button class="btn" id="plansBtn" disabled>Generate Report</button>
+      <div class="status" id="plansStatus"></div>
+      <a class="download-link" id="plansDownload" href="#"></a>
     </div>
 
-    <button class="btn" id="generateBtn" disabled>Generate Report</button>
+    <div class="card">
+      <h1>Pipeline Report</h1>
+      <p class="subtitle">Upload a Pipeline CSV export to generate the Excel report.</p>
 
-    <div class="status" id="status"></div>
-    <a class="download-link" id="downloadLink" href="#"></a>
+      <div class="drop-zone" id="pipelineDropZone">
+        <input type="file" id="pipelineFileInput" accept=".csv" />
+        <div class="drop-icon" id="pipelineDropIcon">📄</div>
+        <div class="drop-label" id="pipelineDropLabel">Drag &amp; drop a CSV file here</div>
+        <div class="drop-hint">or click to browse</div>
+        <div class="file-name" id="pipelineFileName"></div>
+      </div>
+
+      <button class="btn" id="pipelineBtn" disabled>Generate Report</button>
+      <div class="status" id="pipelineStatus"></div>
+      <a class="download-link" id="pipelineDownload" href="#"></a>
+    </div>
+
   </div>
 
   <script>
-    const dropZone = document.getElementById("dropZone");
-    const fileInput = document.getElementById("fileInput");
-    const dropIcon = document.getElementById("dropIcon");
-    const dropLabel = document.getElementById("dropLabel");
-    const fileName = document.getElementById("fileName");
-    const generateBtn = document.getElementById("generateBtn");
-    const status = document.getElementById("status");
-    const downloadLink = document.getElementById("downloadLink");
+    function initUploadArea({ dropZoneId, fileInputId, dropIconId, dropLabelId, fileNameId, btnId, statusId, downloadId, endpoint }) {
+      const dropZone = document.getElementById(dropZoneId);
+      const fileInput = document.getElementById(fileInputId);
+      const dropIcon = document.getElementById(dropIconId);
+      const dropLabel = document.getElementById(dropLabelId);
+      const fileName = document.getElementById(fileNameId);
+      const btn = document.getElementById(btnId);
+      const status = document.getElementById(statusId);
+      const downloadLink = document.getElementById(downloadId);
 
-    let selectedFile = null;
+      let selectedFile = null;
 
-    function setFile(file) {
-      if (!file || !file.name.toLowerCase().endsWith(".csv")) {
-        status.textContent = "Please select a .csv file.";
-        status.className = "status error";
-        return;
-      }
-      selectedFile = file;
-      fileName.textContent = file.name;
-      dropIcon.textContent = "✅";
-      dropLabel.textContent = "File selected";
-      dropZone.classList.add("has-file");
-      generateBtn.disabled = false;
-      status.textContent = "";
-      status.className = "status";
-      downloadLink.classList.remove("visible");
-    }
-
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files[0]) setFile(fileInput.files[0]);
-    });
-
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropZone.classList.add("drag-over");
-    });
-
-    dropZone.addEventListener("dragleave", () => {
-      dropZone.classList.remove("drag-over");
-    });
-
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropZone.classList.remove("drag-over");
-      const file = e.dataTransfer.files[0];
-      if (file) setFile(file);
-    });
-
-    generateBtn.addEventListener("click", async () => {
-      if (!selectedFile) return;
-
-      generateBtn.disabled = true;
-      downloadLink.classList.remove("visible");
-      status.textContent = "Generating report…";
-      status.className = "status loading";
-
-      const formData = new FormData();
-      formData.append("csv_file", selectedFile);
-
-      try {
-        const res = await fetch("/generate", { method: "POST", body: formData });
-
-        if (!res.ok) {
-          const msg = await res.text();
-          status.textContent = msg || "Something went wrong.";
+      function setFile(file) {
+        if (!file || !file.name.toLowerCase().endsWith(".csv")) {
+          status.textContent = "Please select a .csv file.";
           status.className = "status error";
-          generateBtn.disabled = false;
           return;
         }
-
-        const disposition = res.headers.get("Content-Disposition") || "";
-        const match = disposition.match(/filename="([^"]+)"/);
-        const filename = match ? match[1] : "report";
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
-        downloadLink.download = filename;
-        downloadLink.textContent = `⬇ Download ${filename}`;
-        downloadLink.classList.add("visible");
+        selectedFile = file;
+        fileName.textContent = file.name;
+        dropIcon.textContent = "✅";
+        dropLabel.textContent = "File selected";
+        dropZone.classList.add("has-file");
+        btn.disabled = false;
         status.textContent = "";
         status.className = "status";
-      } catch (err) {
-        status.textContent = "Network error — is the server running?";
-        status.className = "status error";
+        downloadLink.classList.remove("visible");
       }
 
-      generateBtn.disabled = false;
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files[0]) setFile(fileInput.files[0]);
+      });
+
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("drag-over");
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) setFile(file);
+      });
+
+      btn.addEventListener("click", async () => {
+        if (!selectedFile) return;
+
+        btn.disabled = true;
+        downloadLink.classList.remove("visible");
+        status.textContent = "Generating report…";
+        status.className = "status loading";
+
+        const formData = new FormData();
+        formData.append("csv_file", selectedFile);
+
+        try {
+          const res = await fetch(endpoint, { method: "POST", body: formData });
+
+          if (!res.ok) {
+            const msg = await res.text();
+            status.textContent = msg || "Something went wrong.";
+            status.className = "status error";
+            btn.disabled = false;
+            return;
+          }
+
+          const disposition = res.headers.get("Content-Disposition") || "";
+          const match = disposition.match(/filename="([^"]+)"/);
+          const filename = match ? match[1] : "report";
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = filename;
+          downloadLink.textContent = `⬇ Download ${filename}`;
+          downloadLink.classList.add("visible");
+          status.textContent = "";
+          status.className = "status";
+        } catch (err) {
+          status.textContent = "Network error — is the server running?";
+          status.className = "status error";
+        }
+
+        btn.disabled = false;
+      });
+    }
+
+    initUploadArea({
+      dropZoneId: "plansDropZone",
+      fileInputId: "plansFileInput",
+      dropIconId: "plansDropIcon",
+      dropLabelId: "plansDropLabel",
+      fileNameId: "plansFileName",
+      btnId: "plansBtn",
+      statusId: "plansStatus",
+      downloadId: "plansDownload",
+      endpoint: "/generate/plans",
+    });
+
+    initUploadArea({
+      dropZoneId: "pipelineDropZone",
+      fileInputId: "pipelineFileInput",
+      dropIconId: "pipelineDropIcon",
+      dropLabelId: "pipelineDropLabel",
+      fileNameId: "pipelineFileName",
+      btnId: "pipelineBtn",
+      statusId: "pipelineStatus",
+      downloadId: "pipelineDownload",
+      endpoint: "/generate/pipeline",
     });
   </script>
 </body>
