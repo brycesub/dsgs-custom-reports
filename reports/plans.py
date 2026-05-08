@@ -4,8 +4,8 @@ from datetime import date, datetime
 
 import openpyxl
 import pandas as pd
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
+
+from reports._utils import autofit_columns, parse_date, write_headers
 
 STATUS_ORDER = [
     "Awarded - Active",
@@ -46,9 +46,6 @@ OUTPUT_COLUMNS = [
     "Next Task/Deadline",
 ]
 
-HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-HEADER_FONT = Font(bold=True, color="FFFFFF")
-
 
 def _parse_amount(val):
     if pd.isna(val) or not str(val).strip():
@@ -60,25 +57,8 @@ def _parse_amount(val):
         return None
 
 
-def _parse_date(val):
-    if pd.isna(val) or not str(val).strip():
-        return None
-    for fmt in ("%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(str(val).strip(), fmt)
-        except ValueError:
-            continue
-    return None
-
-
 def _build_worksheet(ws, df):
-    for col_idx, header in enumerate(OUTPUT_COLUMNS, 1):
-        cell = ws.cell(row=1, column=col_idx, value=header)
-        cell.font = HEADER_FONT
-        cell.fill = HEADER_FILL
-        cell.alignment = Alignment(horizontal="center")
-
-    ws.freeze_panes = "A2"
+    write_headers(ws, OUTPUT_COLUMNS)
 
     for row_idx, (_, row) in enumerate(df.iterrows(), 2):
         for col_idx, col_name in enumerate(OUTPUT_COLUMNS, 1):
@@ -92,31 +72,20 @@ def _build_worksheet(ws, df):
                 else:
                     cell.value = None
             elif col_name in ("Request", "Award"):
-                cell.value = val if val is not None else None
+                cell.value = val
                 if val is not None:
                     cell.number_format = "#,##0"
             else:
                 cell.value = None if (isinstance(val, float) and pd.isna(val)) else val
 
-    for col_idx, header in enumerate(OUTPUT_COLUMNS, 1):
-        col_letter = get_column_letter(col_idx)
-        max_len = len(header)
-        for row_idx in range(2, ws.max_row + 1):
-            cell_val = ws.cell(row=row_idx, column=col_idx).value
-            if cell_val is not None:
-                # Don't use datetime string length for width — use formatted length
-                if isinstance(cell_val, datetime):
-                    max_len = max(max_len, 10)
-                else:
-                    max_len = max(max_len, len(str(cell_val)))
-        ws.column_dimensions[col_letter].width = min(max_len + 2, 50)
+    autofit_columns(ws, OUTPUT_COLUMNS)
 
 
 def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
-    except pd.errors.ParserError:
-        raise ValueError("This file couldn't be read as a CSV — please check the format.")
+    except (pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as e:
+        raise ValueError(f"This file couldn't be read as a CSV: {e}")
 
     if df.empty:
         raise ValueError("The uploaded file has no data rows.")
@@ -131,13 +100,21 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
 
     out["Request"] = out["Request"].apply(_parse_amount)
     out["Award"] = out["Award"].apply(_parse_amount)
-    out["Notif Expected"] = out["Notif Expected"].apply(_parse_date)
-    out["Notif Received"] = out["Notif Received"].apply(_parse_date)
+    out["Notif Expected"] = out["Notif Expected"].apply(parse_date)
+    out["Notif Received"] = out["Notif Received"].apply(parse_date)
+
+    out["Year"] = pd.to_numeric(out["Year"], errors="coerce")
+    bad_year_count = int(out["Year"].isna().sum())
+    if bad_year_count:
+        raise ValueError(
+            f"{bad_year_count} row(s) have non-numeric Year values — please check the CSV."
+        )
+    out["Year"] = out["Year"].astype(int)
 
     status_rank = {s: i for i, s in enumerate(STATUS_ORDER)}
     out["_status_rank"] = out["Status"].map(status_rank).fillna(len(STATUS_ORDER))
     out = out.sort_values(["_status_rank", "Fund"], na_position="last")
-    out = out[out["Year"].astype(int) >= date.today().year]
+    out = out[out["Year"] >= date.today().year]
     if out.empty:
         raise ValueError(
             f"No rows match {date.today().year} or later — "
@@ -152,8 +129,8 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        cur_df = client_df[client_df["Year"].astype(int) == current_year]
-        fut_df = client_df[client_df["Year"].astype(int) > current_year]
+        cur_df = client_df[client_df["Year"] == current_year]
+        fut_df = client_df[client_df["Year"] > current_year]
 
         ws_cur = wb.create_sheet(title=str(current_year))
         _build_worksheet(ws_cur, cur_df[OUTPUT_COLUMNS])

@@ -11,6 +11,15 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB upload limit
 
 
+def _get_csv_file():
+    f = request.files.get("csv_file")
+    if not f or not f.filename:
+        return None, ("No file uploaded.", 400)
+    if not f.filename.lower().endswith(".csv"):
+        return None, ("Please upload a CSV file.", 400)
+    return f, None
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -18,18 +27,17 @@ def index():
 
 @app.route("/generate/plans", methods=["POST"])
 def generate_plans_report():
-    f = request.files.get("csv_file")
-    if not f or not f.filename:
-        return "No file uploaded.", 400
-    if not f.filename.lower().endswith(".csv"):
-        return "Please upload a CSV file.", 400
+    f, err = _get_csv_file()
+    if err:
+        return err
 
     try:
         results = generate_plans(f.read())
     except ValueError as e:
         return str(e), 400
-    except Exception as e:
-        return f"Error generating report: {e}", 500
+    except Exception:
+        app.logger.exception("Unexpected error generating plans report")
+        return "An unexpected error occurred. Please try again.", 500
 
     if len(results) == 1:
         client, xlsx_bytes = results[0]
@@ -55,18 +63,17 @@ def generate_plans_report():
 
 @app.route("/generate/pipeline", methods=["POST"])
 def generate_pipeline_report():
-    f = request.files.get("csv_file")
-    if not f or not f.filename:
-        return "No file uploaded.", 400
-    if not f.filename.lower().endswith(".csv"):
-        return "Please upload a CSV file.", 400
+    f, err = _get_csv_file()
+    if err:
+        return err
 
     try:
         client, xlsx_bytes = generate_pipeline(f.read(), f.filename)
     except ValueError as e:
         return str(e), 400
-    except Exception as e:
-        return f"Error generating report: {e}", 500
+    except Exception:
+        app.logger.exception("Unexpected error generating pipeline report")
+        return "An unexpected error occurred. Please try again.", 500
 
     today = date.today().isoformat()
     return send_file(
