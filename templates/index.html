@@ -104,10 +104,14 @@
       word-break: break-all;
     }
 
-    .btn {
-      display: block;
-      width: 100%;
+    .btn-group {
+      display: flex;
+      gap: 8px;
       margin-top: 20px;
+    }
+
+    .btn {
+      flex: 1;
       padding: 12px;
       background: #4472C4;
       color: #fff;
@@ -121,6 +125,9 @@
 
     .btn:hover:not(:disabled) { background: #3461b0; }
     .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .btn-pdf { background: #0d9488; }
+    .btn-pdf:hover:not(:disabled) { background: #0f766e; }
 
     .status {
       margin-top: 16px;
@@ -164,7 +171,7 @@
 
     <div class="card">
       <h1>Plans Report</h1>
-      <p class="subtitle">Upload a Plans CSV export to generate the Excel report.</p>
+      <p class="subtitle">Upload a Plans CSV export to generate the report.</p>
 
       <div class="drop-zone" id="plansDropZone">
         <input type="file" id="plansFileInput" accept=".csv" />
@@ -174,14 +181,17 @@
         <div class="file-name" id="plansFileName"></div>
       </div>
 
-      <button class="btn" id="plansBtn" disabled>Generate Report</button>
+      <div class="btn-group">
+        <button class="btn" id="plansExcelBtn" disabled>Generate Excel</button>
+        <button class="btn btn-pdf" id="plansPdfBtn" disabled>Generate PDF</button>
+      </div>
       <div class="status" id="plansStatus"></div>
       <a class="download-link" id="plansDownload" href="#"></a>
     </div>
 
     <div class="card">
       <h1>Pipeline Report</h1>
-      <p class="subtitle">Upload a Pipeline CSV export to generate the Excel report. Filename must be in the format <code>Pipeline YYYYMMDD ClientName.csv</code>.</p>
+      <p class="subtitle">Upload a Pipeline CSV export to generate the report. Filename must be in the format <code>Pipeline YYYYMMDD ClientName.csv</code>.</p>
 
       <div class="drop-zone" id="pipelineDropZone">
         <input type="file" id="pipelineFileInput" accept=".csv" />
@@ -191,7 +201,10 @@
         <div class="file-name" id="pipelineFileName"></div>
       </div>
 
-      <button class="btn" id="pipelineBtn" disabled>Generate Report</button>
+      <div class="btn-group">
+        <button class="btn" id="pipelineExcelBtn" disabled>Generate Excel</button>
+        <button class="btn btn-pdf" id="pipelinePdfBtn" disabled>Generate PDF</button>
+      </div>
       <div class="status" id="pipelineStatus"></div>
       <a class="download-link" id="pipelineDownload" href="#"></a>
     </div>
@@ -199,13 +212,18 @@
   </div>
 
   <script>
-    function initUploadArea({ dropZoneId, fileInputId, dropIconId, dropLabelId, fileNameId, btnId, statusId, downloadId, endpoint }) {
+    function initUploadArea({
+      dropZoneId, fileInputId, dropIconId, dropLabelId, fileNameId,
+      excelBtnId, excelEndpoint, pdfBtnId, pdfEndpoint,
+      statusId, downloadId
+    }) {
       const dropZone = document.getElementById(dropZoneId);
       const fileInput = document.getElementById(fileInputId);
       const dropIcon = document.getElementById(dropIconId);
       const dropLabel = document.getElementById(dropLabelId);
       const fileName = document.getElementById(fileNameId);
-      const btn = document.getElementById(btnId);
+      const excelBtn = document.getElementById(excelBtnId);
+      const pdfBtn = pdfBtnId ? document.getElementById(pdfBtnId) : null;
       const status = document.getElementById(statusId);
       const downloadLink = document.getElementById(downloadId);
 
@@ -222,7 +240,8 @@
         dropIcon.textContent = "✅";
         dropLabel.textContent = "File selected";
         dropZone.classList.add("has-file");
-        btn.disabled = false;
+        excelBtn.disabled = false;
+        if (pdfBtn) pdfBtn.disabled = false;
         status.textContent = "";
         status.className = "status";
         downloadLink.classList.remove("visible");
@@ -248,10 +267,11 @@
         if (file) setFile(file);
       });
 
-      btn.addEventListener("click", async () => {
+      async function handleGenerate(endpoint, triggerBtn) {
         if (!selectedFile) return;
 
-        btn.disabled = true;
+        excelBtn.disabled = true;
+        if (pdfBtn) pdfBtn.disabled = true;
         downloadLink.classList.remove("visible");
         status.textContent = "Generating report…";
         status.className = "status loading";
@@ -266,7 +286,8 @@
             const msg = await res.text();
             status.textContent = msg || "Something went wrong.";
             status.className = "status error";
-            btn.disabled = false;
+            excelBtn.disabled = false;
+            if (pdfBtn) pdfBtn.disabled = false;
             return;
           }
 
@@ -278,7 +299,7 @@
           const url = URL.createObjectURL(blob);
           downloadLink.href = url;
           downloadLink.download = filename;
-          downloadLink.textContent = `⬇ Download ${filename}`;
+          downloadLink.textContent = "⬇ Download " + filename;
           downloadLink.classList.add("visible");
           status.textContent = "";
           status.className = "status";
@@ -287,8 +308,12 @@
           status.className = "status error";
         }
 
-        btn.disabled = false;
-      });
+        excelBtn.disabled = false;
+        if (pdfBtn) pdfBtn.disabled = false;
+      }
+
+      excelBtn.addEventListener("click", () => handleGenerate(excelEndpoint, excelBtn));
+      if (pdfBtn) pdfBtn.addEventListener("click", () => handleGenerate(pdfEndpoint, pdfBtn));
     }
 
     initUploadArea({
@@ -297,10 +322,12 @@
       dropIconId: "plansDropIcon",
       dropLabelId: "plansDropLabel",
       fileNameId: "plansFileName",
-      btnId: "plansBtn",
+      excelBtnId: "plansExcelBtn",
+      excelEndpoint: "/generate/plans",
+      pdfBtnId: "plansPdfBtn",
+      pdfEndpoint: "/generate/plans/pdf",
       statusId: "plansStatus",
       downloadId: "plansDownload",
-      endpoint: "/generate/plans",
     });
 
     initUploadArea({
@@ -309,10 +336,12 @@
       dropIconId: "pipelineDropIcon",
       dropLabelId: "pipelineDropLabel",
       fileNameId: "pipelineFileName",
-      btnId: "pipelineBtn",
+      excelBtnId: "pipelineExcelBtn",
+      excelEndpoint: "/generate/pipeline",
+      pdfBtnId: "pipelinePdfBtn",
+      pdfEndpoint: "/generate/pipeline/pdf",
       statusId: "pipelineStatus",
       downloadId: "pipelineDownload",
-      endpoint: "/generate/pipeline",
     });
   </script>
 </body>
