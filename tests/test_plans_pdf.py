@@ -41,7 +41,7 @@ def _row(
 def freeze_today():
     mock = MagicMock()
     mock.today.return_value = FIXED_TODAY
-    with patch("reports.plans.date", mock):
+    with patch("reports.plans.date", mock), patch("reports.plans_pdf.date", mock):
         yield
 
 
