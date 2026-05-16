@@ -31,7 +31,11 @@ def _extract_client(filename: str) -> str:
     return parts[2]
 
 
-def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
+def _load_data(csv_bytes: bytes, filename: str) -> tuple[str, pd.DataFrame]:
+    """Parse and validate a Pipeline CSV.
+
+    Returns (client_name, df) where df has OUTPUT_COLUMNS columns sorted by Due Date.
+    """
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
     except (pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as e:
@@ -45,11 +49,15 @@ def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
         raise ValueError(f"CSV is missing expected columns: {', '.join(missing)}")
 
     client = _extract_client(filename)
-    sheet_name = f"Pipeline - {date.today().isoformat()}"
-
     out = df[list(COLUMN_MAP.keys())].rename(columns=COLUMN_MAP).copy()
     out["Due Date"] = out["Due Date"].apply(parse_date)
     out = out.sort_values("Due Date", na_position="last")
+    return client, out
+
+
+def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
+    client, out = _load_data(csv_bytes, filename)
+    sheet_name = f"Pipeline - {date.today().isoformat()}"
 
     wb = openpyxl.Workbook()
     wb.remove(wb.active)

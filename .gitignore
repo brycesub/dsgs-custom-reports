@@ -17,3 +17,6 @@ input/
 
 # Editor / tooling
 .claude/
+
+# Brainstorming / superpowers session files
+.superpowers/
