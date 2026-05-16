@@ -81,7 +81,13 @@ def _build_worksheet(ws, df):
     autofit_columns(ws, OUTPUT_COLUMNS)
 
 
-def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
+def _load_data(csv_bytes: bytes) -> list[tuple[str, pd.DataFrame, pd.DataFrame]]:
+    """Parse and validate a Plans CSV.
+
+    Returns a list of (client, cur_year_df, future_df) tuples, one per unique
+    client, where both DataFrames have OUTPUT_COLUMNS columns and rows are
+    sorted by STATUS_ORDER rank then Fund name.
+    """
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
     except (pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as e:
@@ -121,23 +127,30 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
             "please check the file contains current data."
         )
 
+    current_year = date.today().year
+    results = []
+    for client, client_df in out.groupby("_client"):
+        cur_df = client_df[client_df["Year"] == current_year][OUTPUT_COLUMNS].reset_index(drop=True)
+        fut_df = client_df[client_df["Year"] > current_year][OUTPUT_COLUMNS].reset_index(drop=True)
+        results.append((client, cur_df, fut_df))
+    return results
+
+
+def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     results = []
     current_year = date.today().year
     future_label = f"{current_year + 1}+"
 
-    for client, client_df in out.groupby("_client"):
+    for client, cur_df, fut_df in _load_data(csv_bytes):
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        cur_df = client_df[client_df["Year"] == current_year]
-        fut_df = client_df[client_df["Year"] > current_year]
-
         ws_cur = wb.create_sheet(title=str(current_year))
-        _build_worksheet(ws_cur, cur_df[OUTPUT_COLUMNS])
+        _build_worksheet(ws_cur, cur_df)
 
         if not fut_df.empty:
             ws_fut = wb.create_sheet(title=future_label)
-            _build_worksheet(ws_fut, fut_df[OUTPUT_COLUMNS])
+            _build_worksheet(ws_fut, fut_df)
 
         wb.active = wb[str(current_year)]
 
