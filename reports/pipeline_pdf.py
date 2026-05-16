@@ -27,7 +27,7 @@ def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
     client, out = _load_data(csv_bytes, filename)
     rows = [
         {
-            "year": _safe(r["Year"]),
+            "year": "" if pd.isna(r["Year"]) else str(int(r["Year"])),
             "project": _safe(r["Project"]),
             "funder": _safe(r["Funder"]),
             "task_type": _safe(r["Task Type"]),
