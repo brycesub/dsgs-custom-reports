@@ -11,6 +11,15 @@ _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 _jinja_env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescape=True)
 
 
+def _fmt_year(val) -> str:
+    if pd.isna(val):
+        return ""
+    try:
+        return str(int(val))
+    except (ValueError, TypeError):
+        return str(val)
+
+
 def _fmt_date(val) -> str | None:
     if not isinstance(val, datetime) or pd.isnull(val):
         return None
@@ -27,7 +36,7 @@ def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
     client, out = _load_data(csv_bytes, filename)
     rows = [
         {
-            "year": "" if pd.isna(r["Year"]) else str(int(r["Year"])),
+            "year": _fmt_year(r["Year"]),
             "project": _safe(r["Project"]),
             "funder": _safe(r["Funder"]),
             "task_type": _safe(r["Task Type"]),

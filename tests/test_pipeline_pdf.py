@@ -61,3 +61,9 @@ class TestGeneratePipelinePdf:
         csv = _csv(_row(due_date="2026-05-01"), _row(due_date=""))
         client, pdf_bytes = generate(csv, _VALID_FILENAME)
         assert pdf_bytes[:4] == b"%PDF"
+
+    def test_string_year_does_not_raise(self):
+        # Year values like "FY 2027" must not crash int()
+        csv = _csv(_row(year="FY 2027"))
+        client, pdf_bytes = generate(csv, _VALID_FILENAME)
+        assert pdf_bytes[:4] == b"%PDF"
