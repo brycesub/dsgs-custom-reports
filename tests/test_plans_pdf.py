@@ -75,3 +75,12 @@ class TestGeneratePlansPdf:
     def test_raises_for_all_past_years(self):
         with pytest.raises(ValueError, match="No rows match"):
             generate(_csv(_row(year=2024)))
+
+    def test_nat_notification_dates_do_not_raise(self):
+        # Mixed real dates and blanks produce pd.NaT, which must not crash strftime
+        csv = _csv(
+            _row(notif_expected="2026-03-01", notif_received="2026-04-01"),
+            _row(notif_expected="", notif_received=""),
+        )
+        _, pdf_bytes = generate(csv)[0]
+        assert pdf_bytes[:4] == b"%PDF"

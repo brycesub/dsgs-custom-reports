@@ -24,6 +24,15 @@ _ACCENT = {
 }
 
 
+def _fmt_year(val) -> str:
+    if pd.isna(val):
+        return ""
+    try:
+        return str(int(val))
+    except (ValueError, TypeError):
+        return str(val)
+
+
 def _fmt_amount(val) -> str | None:
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return None
@@ -31,7 +40,7 @@ def _fmt_amount(val) -> str | None:
 
 
 def _fmt_date(val) -> str | None:
-    if not isinstance(val, datetime):
+    if not isinstance(val, datetime) or pd.isnull(val):
         return None
     return val.strftime("%m/%d/%Y")
 
@@ -54,8 +63,9 @@ def _build_context(client: str, cur_df: pd.DataFrame, fut_df: pd.DataFrame) -> d
             rows = []
             for _, r in status_df.iterrows():
                 parts = []
-                if not pd.isna(r["Year"]):
-                    parts.append(str(int(r["Year"])))
+                year_str = _fmt_year(r["Year"])
+                if year_str:
+                    parts.append(year_str)
                 purpose = _safe_str(r.get("Purpose"))
                 if purpose:
                     parts.append(purpose)
