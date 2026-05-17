@@ -55,3 +55,9 @@ class TestGeneratePipelinePdf:
     def test_raises_for_header_only_csv(self):
         with pytest.raises(ValueError, match="no data rows"):
             generate((_HEADER + "\n").encode(), _VALID_FILENAME)
+
+    def test_nat_due_date_does_not_raise(self):
+        # A column with mixed real dates and blanks produces pd.NaT, which must not crash strftime
+        csv = _csv(_row(due_date="2026-05-01"), _row(due_date=""))
+        client, pdf_bytes = generate(csv, _VALID_FILENAME)
+        assert pdf_bytes[:4] == b"%PDF"

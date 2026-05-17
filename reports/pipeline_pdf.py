@@ -12,7 +12,7 @@ _jinja_env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescap
 
 
 def _fmt_date(val) -> str | None:
-    if not isinstance(val, datetime):
+    if not isinstance(val, datetime) or pd.isnull(val):
         return None
     return val.strftime("%m/%d/%Y")
 
