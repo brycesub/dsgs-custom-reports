@@ -4,17 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom Reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #f0f2f5;
       min-height: 100vh;
       display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
       padding: 48px 24px;
+    }
+
+    .site-header {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .site-logo {
+      max-width: 180px;
+      height: auto;
     }
 
     .page {
@@ -35,8 +51,9 @@
     }
 
     h1 {
+      font-family: "Merriweather", Georgia, serif;
       font-size: 1.4rem;
-      font-weight: 600;
+      font-weight: 700;
       color: #1a1a2e;
       margin-bottom: 8px;
     }
@@ -167,6 +184,9 @@
   </style>
 </head>
 <body>
+  <header class="site-header">
+    <img src="{{ url_for('static', filename='DS_Logo_Primary.png') }}" alt="Diana Silver" class="site-logo" />
+  </header>
   <div class="page">
 
     <div class="card">
