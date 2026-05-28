@@ -3,35 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <style>
+@font-face { font-family: Roboto; src: url('./fonts/Roboto-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: Roboto; src: url('./fonts/Roboto-Bold.ttf'); font-weight: 700; }
+@font-face { font-family: Merriweather; src: url('./fonts/Merriweather-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: Merriweather; src: url('./fonts/Merriweather-Bold.ttf'); font-weight: 700; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a2e; }
+body { font-family: Roboto, sans-serif; font-size: 10pt; color: #1a1a2e; }
 
 @page {
   size: letter;
   margin: 0 0 1.8cm 0;
   @bottom-left {
     content: "Diana Silver Grants Strategy \B7 diana@dsilvergrants.com";
-    font-size: 8pt; color: #9ca3af; font-family: Arial, sans-serif; padding-bottom: 0.3cm;
+    font-size: 8pt; color: #9ca3af; font-family: Roboto, sans-serif; padding-bottom: 0.3cm;
   }
   @bottom-right {
     content: "Page " counter(page);
-    font-size: 8pt; color: #9ca3af; font-family: Arial, sans-serif; padding-bottom: 0.3cm;
+    font-size: 8pt; color: #9ca3af; font-family: Roboto, sans-serif; padding-bottom: 0.3cm;
   }
 }
 
-.page-header { background: #4472C4; padding: 14px 24px; }
+.page-header { background: #4472C4; padding: 0; }
 .header-table { width: 100%; border-collapse: collapse; }
-.header-name { color: #ffffff; font-size: 15pt; font-weight: 700; }
-.header-email { color: #c5d5ee; font-size: 9pt; margin-top: 2px; }
-.header-date { color: #c5d5ee; font-size: 9pt; text-align: right; vertical-align: top; }
+.header-logo-cell { background: #ffffff; padding: 8px 20px; vertical-align: middle; width: 1%; white-space: nowrap; }
+.header-logo { height: 40px; display: block; }
+.header-date { color: #c5d5ee; font-size: 9pt; text-align: right; vertical-align: middle; padding: 8px 20px; }
 
 .title-block { padding: 18px 24px 10px; }
-.client-name { font-size: 18pt; font-weight: 700; color: #1a1a2e; }
-.report-type { font-size: 12pt; color: #4472C4; font-weight: 600; margin-top: 3px; }
+.client-name { font-family: Merriweather, serif; font-size: 18pt; font-weight: 700; color: #1a1a2e; }
+.report-type { font-family: Merriweather, serif; font-size: 12pt; color: #4472C4; font-weight: 700; margin-top: 3px; }
 
 .year-section { padding: 6px 24px 12px; }
 .year-label {
-  font-size: 12pt; font-weight: 700; color: #1a1a2e;
+  font-family: Merriweather, serif; font-size: 12pt; font-weight: 700; color: #1a1a2e;
   border-bottom: 2px solid #4472C4; padding-bottom: 4px; margin-bottom: 10px;
 }
 
@@ -56,9 +61,8 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a2
 <div class="page-header">
   <table class="header-table">
     <tr>
-      <td>
-        <div class="header-name">Diana Silver Grants Strategy</div>
-        <div class="header-email">diana@dsilvergrants.com</div>
+      <td class="header-logo-cell">
+        <img src="./DS_Logo_Alt.png" class="header-logo" alt="">
       </td>
       <td class="header-date">Generated {{ today }}</td>
     </tr>
