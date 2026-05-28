@@ -53,7 +53,6 @@ The `@page` footer rules (`@bottom-left`, `@bottom-right`) are unchanged in cont
 
 ```css
 @font-face { font-family: Roboto; src: url('./fonts/Roboto-Regular.ttf'); font-weight: 400; }
-@font-face { font-family: Roboto; src: url('./fonts/Roboto-SemiBold.ttf'); font-weight: 600; }
 @font-face { font-family: Roboto; src: url('./fonts/Roboto-Bold.ttf'); font-weight: 700; }
 @font-face { font-family: Merriweather; src: url('./fonts/Merriweather-Regular.ttf'); font-weight: 400; }
 @font-face { font-family: Merriweather; src: url('./fonts/Merriweather-Bold.ttf'); font-weight: 700; }
@@ -81,7 +80,7 @@ Both templates set `body { font-family: Roboto, sans-serif; }` as the base so al
 |---|---|---|
 | Client name (`.client-name`) | Merriweather | 700 |
 | "Pipeline Report" label (`.report-type`) | Merriweather | 700 |
-| Table header row (`th`) | Roboto | 600 |
+| Table header row (`th`) | Roboto | 700 |
 | Table data cells (`td`) | Roboto | 400 |
 | Header date | Roboto | 400 |
 | `@page` footer | Roboto | 400 |
