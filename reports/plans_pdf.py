@@ -114,6 +114,6 @@ def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     for client, cur_df, fut_df in _load_data(csv_bytes):
         ctx = _build_context(client, cur_df, fut_df)
         html = _jinja_env.get_template("plans_pdf.html").render(**ctx)
-        pdf_bytes = HTML(string=html).write_pdf()
+        pdf_bytes = HTML(string=html, base_url=str(_TEMPLATES_DIR)).write_pdf()
         results.append((client, pdf_bytes))
     return results
