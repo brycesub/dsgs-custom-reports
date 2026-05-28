@@ -59,6 +59,8 @@ The `@page` footer rules (`@bottom-left`, `@bottom-right`) are unchanged in cont
 @font-face { font-family: Merriweather; src: url('./fonts/Merriweather-Bold.ttf'); font-weight: 700; }
 ```
 
+Both templates set `body { font-family: Roboto, sans-serif; }` as the base so all elements inherit Roboto by default. Merriweather is applied only to the specific heading selectors listed below.
+
 ### Plans PDF
 
 | Element | Font | Weight |
