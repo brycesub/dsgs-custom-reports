@@ -132,6 +132,17 @@ Extra columns in the CSV are ignored. All rows are included (no date filtering).
 
 ---
 
+## PDF rendering
+
+Preferred fonts for rendered PDFs are **Merriweather** (serif) and **Roboto** (sans-serif).
+
+Logo assets live in `templates/`:
+- `DS_Logo_Primary.png`
+- `DS_Logo_Alt.png`
+- `DS_Logo_Secondary2.png`
+
+---
+
 ## Testing
 
 ```bash

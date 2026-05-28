@@ -55,6 +55,14 @@ Shared Excel utilities (header styling, column autofit, date parsing) live in `r
 - All rows included (no date filtering), single sheet named `Pipeline - YYYY-MM-DD`, sorted by Due Date ascending.
 - Download filename: `Pipeline_{client}_{date}.xlsx`.
 
+### PDF rendering
+Preferred fonts for rendered PDFs are Merriweather (serif) and Roboto (sans-serif).
+
+Logo assets for use in PDFs live in `templates/`:
+- `DS_Logo_Primary.png`
+- `DS_Logo_Alt.png`
+- `DS_Logo_Secondary2.png`
+
 ### adding a new report
 1. Create `reports/<name>.py` with a `generate()` function; import shared helpers from `reports/_utils.py`.
 2. Add a `POST /generate/<name>` route in `app.py`.
