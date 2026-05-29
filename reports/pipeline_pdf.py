@@ -51,5 +51,5 @@ def generate(csv_bytes: bytes, filename: str) -> tuple[str, bytes]:
         "rows": rows,
     }
     html = _jinja_env.get_template("pipeline_pdf.html").render(**ctx)
-    pdf_bytes = HTML(string=html).write_pdf()
+    pdf_bytes = HTML(string=html, base_url=str(_TEMPLATES_DIR)).write_pdf()
     return client, pdf_bytes
