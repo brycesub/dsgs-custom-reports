@@ -198,4 +198,52 @@ class TestValidationErrors:
 
     def test_raises_for_non_numeric_year(self):
         with pytest.raises(ValueError, match="non-numeric Year"):
-            generate(_csv(_row(year="FY 2026")))
+            generate(_csv(_row(year="TBD")))
+
+
+# ---------------------------------------------------------------------------
+# Fiscal-year ("FY 2026") handling
+# ---------------------------------------------------------------------------
+
+
+class TestFiscalYearParsing:
+    """Some clients (KCRep, Hartford Stage, WEN) use 'FY 2026' for fiscal years
+    that cross the calendar year. The 'FY' prefix should be disregarded and the
+    row treated as its numeric year."""
+
+    def test_fy_prefixed_current_year_included(self):
+        _, xlsx_bytes = generate(_csv(_row(year="FY 2026")))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[str(CURRENT_YEAR)]
+        assert ws.max_row == 2  # header + 1 row
+        assert ws.cell(2, 1).value == CURRENT_YEAR
+
+    def test_fy_prefixed_future_year_goes_to_future_sheet(self):
+        _, xlsx_bytes = generate(_csv(_row(year="FY 2027")))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        assert wb[f"{FUTURE_YEAR}+"].max_row == 2
+
+    def test_fy_prefixed_past_year_excluded(self):
+        _, xlsx_bytes = generate(_csv(_row(year="FY 2025"), _row(year="FY 2026")))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[str(CURRENT_YEAR)]
+        assert ws.max_row == 2  # FY 2025 filtered out
+
+    def test_mixed_fy_and_plain_years_sort_together(self):
+        # A plain 2026 and an "FY 2026" should land on the same sheet.
+        csv_bytes = _csv(
+            _row(year="FY 2026", status="Planned", project="B Fund"),
+            _row(year=2026, status="Planned", project="A Fund"),
+        )
+        _, xlsx_bytes = generate(csv_bytes)[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[str(CURRENT_YEAR)]
+        assert ws.max_row == 3  # header + 2 rows
+        assert ws.cell(2, 3).value == "A Fund"
+        assert ws.cell(3, 3).value == "B Fund"
+
+    def test_fy_no_space(self):
+        _, xlsx_bytes = generate(_csv(_row(year="FY2026")))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[str(CURRENT_YEAR)]
+        assert ws.cell(2, 1).value == CURRENT_YEAR

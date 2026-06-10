@@ -47,6 +47,22 @@ OUTPUT_COLUMNS = [
 ]
 
 
+def _parse_year(val):
+    """Parse a Year value to an int.
+
+    Tolerates fiscal-year labels like "FY 2026" / "FY2026" (used by clients
+    whose fiscal years cross the calendar year) by disregarding the "FY"
+    prefix and reading the numeric year. Returns None if no year is found.
+    """
+    if pd.isna(val):
+        return None
+    s = re.sub(r"^\s*FY\s*", "", str(val).strip(), flags=re.IGNORECASE)
+    try:
+        return int(float(s))
+    except ValueError:
+        return None
+
+
 def _parse_amount(val):
     if pd.isna(val) or not str(val).strip():
         return None
@@ -109,7 +125,7 @@ def _load_data(csv_bytes: bytes) -> list[tuple[str, pd.DataFrame, pd.DataFrame]]
     out["Notif Expected"] = out["Notif Expected"].apply(parse_date)
     out["Notif Received"] = out["Notif Received"].apply(parse_date)
 
-    out["Year"] = pd.to_numeric(out["Year"], errors="coerce")
+    out["Year"] = out["Year"].apply(_parse_year)
     bad_year_count = int(out["Year"].isna().sum())
     if bad_year_count:
         raise ValueError(
