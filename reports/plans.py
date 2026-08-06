@@ -46,6 +46,10 @@ OUTPUT_COLUMNS = [
     "Next Task/Deadline",
 ]
 
+# Excel number formats applied in _build_worksheet.
+_CURRENCY_FORMAT = '"$"#,##0'
+_DATE_FORMAT = "m/d/yy"
+
 
 def _current_fiscal_year(today: date) -> int:
     """Return the current fiscal year number (July 1-June 30 convention)."""
@@ -89,13 +93,13 @@ def _build_worksheet(ws, df):
             if col_name in ("Notif Expected", "Notif Received"):
                 if isinstance(val, datetime):
                     cell.value = val
-                    cell.number_format = "MM/DD/YYYY"
+                    cell.number_format = _DATE_FORMAT
                 else:
                     cell.value = None
             elif col_name in ("Request", "Award"):
                 cell.value = val
                 if val is not None:
-                    cell.number_format = "#,##0"
+                    cell.number_format = _CURRENCY_FORMAT
             else:
                 cell.value = None if (isinstance(val, float) and pd.isna(val)) else val
 

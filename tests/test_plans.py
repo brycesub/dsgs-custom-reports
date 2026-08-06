@@ -186,6 +186,29 @@ class TestAmountParsing:
 # ---------------------------------------------------------------------------
 
 
+class TestNumberFormats:
+    def test_request_award_use_currency_format(self):
+        _, xlsx_bytes = generate(_csv(_row(request="175000", award="3000")))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[f"FY {CURRENT_YEAR}"]
+        assert ws.cell(2, 6).number_format == '"$"#,##0'  # Request
+        assert ws.cell(2, 7).number_format == '"$"#,##0'  # Award
+
+    def test_notif_dates_use_short_date_format(self):
+        _, xlsx_bytes = generate(
+            _csv(_row(notif_expected="2026-06-30", notif_received="2026-04-21"))
+        )[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb[f"FY {CURRENT_YEAR}"]
+        assert ws.cell(2, 8).number_format == "m/d/yy"  # Notif Expected
+        assert ws.cell(2, 9).number_format == "m/d/yy"  # Notif Received
+
+
+# ---------------------------------------------------------------------------
+# Validation errors
+# ---------------------------------------------------------------------------
+
+
 class TestValidationErrors:
     def test_raises_for_missing_column(self):
         csv_bytes = b"Year,Funder name,Project\n2026,Some Funder,Some Project"
