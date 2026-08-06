@@ -135,6 +135,13 @@ class TestExtraColumnsIgnored:
             "Task Name",
             "Due Date",
         ]
+        values = [
+            ws.cell(r, c).value
+            for r in range(1, ws.max_row + 1)
+            for c in range(1, ws.max_column + 1)
+        ]
+        for sentinel in ("Diana Silver", "file.pdf", "Incomplete", "Not Started"):
+            assert sentinel not in values
 
 
 # ---------------------------------------------------------------------------
