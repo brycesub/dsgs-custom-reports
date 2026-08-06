@@ -71,12 +71,12 @@ class TestGenerateHappyPath:
     def test_current_year_sheet_always_created(self):
         _, xlsx_bytes = generate(_csv(_row(year=CURRENT_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert str(CURRENT_YEAR) in wb.sheetnames
+        assert f"FY {CURRENT_YEAR}" in wb.sheetnames
 
     def test_future_sheet_created_when_future_rows_exist(self):
         _, xlsx_bytes = generate(_csv(_row(year=CURRENT_YEAR), _row(year=FUTURE_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert f"{FUTURE_YEAR}+" in wb.sheetnames
+        assert f"FY {FUTURE_YEAR}" in wb.sheetnames
 
     def test_no_future_sheet_when_no_future_rows(self):
         _, xlsx_bytes = generate(_csv(_row(year=CURRENT_YEAR)))[0]
@@ -86,12 +86,12 @@ class TestGenerateHappyPath:
     def test_current_year_sheet_is_active(self):
         _, xlsx_bytes = generate(_csv(_row(year=CURRENT_YEAR), _row(year=FUTURE_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert wb.active.title == str(CURRENT_YEAR)
+        assert wb.active.title == f"FY {CURRENT_YEAR}"
 
     def test_headers_written_to_row_1(self):
         _, xlsx_bytes = generate(_csv(_row()))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         # OUTPUT_COLUMNS: Year, Funder, Fund, Purpose, Status, Request, Award, ...
         assert ws.cell(1, 1).value == "Year"
         assert ws.cell(1, 2).value == "Funder"
@@ -101,7 +101,7 @@ class TestGenerateHappyPath:
     def test_data_written_to_row_2(self):
         _, xlsx_bytes = generate(_csv(_row(funder="Big Foundation", project="My Fund")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 2).value == "Big Foundation"  # Funder
         assert ws.cell(2, 3).value == "My Fund"  # Fund
 
@@ -116,7 +116,7 @@ class TestYearFiltering:
         # Two rows: one past (2025), one current (2026)
         _, xlsx_bytes = generate(_csv(_row(year=2025), _row(year=CURRENT_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.max_row == 2  # header + 1 row (2025 filtered out)
 
     def test_raises_when_all_rows_in_past(self):
@@ -126,8 +126,8 @@ class TestYearFiltering:
     def test_future_rows_go_to_future_sheet(self):
         _, xlsx_bytes = generate(_csv(_row(year=FUTURE_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert f"{FUTURE_YEAR}+" in wb.sheetnames
-        assert wb[f"{FUTURE_YEAR}+"].max_row == 2  # header + 1 row
+        assert f"FY {FUTURE_YEAR}" in wb.sheetnames
+        assert wb[f"FY {FUTURE_YEAR}"].max_row == 2  # header + 1 row
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +144,7 @@ class TestSortOrder:
         )
         _, xlsx_bytes = generate(csv_bytes)[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 5).value == "Awarded - Active"
         assert ws.cell(3, 5).value == "Planned"
 
@@ -155,7 +155,7 @@ class TestSortOrder:
         )
         _, xlsx_bytes = generate(csv_bytes)[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 3).value == "Alpha Fund"  # Fund col
         assert ws.cell(3, 3).value == "Zoo Fund"
 
@@ -169,14 +169,14 @@ class TestAmountParsing:
     def test_dollar_sign_and_commas_stripped(self):
         _, xlsx_bytes = generate(_csv(_row(request="$10500", award="$3000")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 6).value == pytest.approx(10500.0)  # Request
         assert ws.cell(2, 7).value == pytest.approx(3000.0)  # Award
 
     def test_empty_amount_written_as_none(self):
         _, xlsx_bytes = generate(_csv(_row(request="", award="")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 6).value is None
         assert ws.cell(2, 7).value is None
 
@@ -214,19 +214,19 @@ class TestFiscalYearParsing:
     def test_fy_prefixed_current_year_included(self):
         _, xlsx_bytes = generate(_csv(_row(year="FY 2026")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.max_row == 2  # header + 1 row
         assert ws.cell(2, 1).value == CURRENT_YEAR
 
     def test_fy_prefixed_future_year_goes_to_future_sheet(self):
         _, xlsx_bytes = generate(_csv(_row(year="FY 2027")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert wb[f"{FUTURE_YEAR}+"].max_row == 2
+        assert wb[f"FY {FUTURE_YEAR}"].max_row == 2
 
     def test_fy_prefixed_past_year_excluded(self):
         _, xlsx_bytes = generate(_csv(_row(year="FY 2025"), _row(year="FY 2026")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.max_row == 2  # FY 2025 filtered out
 
     def test_mixed_fy_and_plain_years_sort_together(self):
@@ -237,7 +237,7 @@ class TestFiscalYearParsing:
         )
         _, xlsx_bytes = generate(csv_bytes)[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.max_row == 3  # header + 2 rows
         assert ws.cell(2, 3).value == "A Fund"
         assert ws.cell(3, 3).value == "B Fund"
@@ -245,5 +245,32 @@ class TestFiscalYearParsing:
     def test_fy_no_space(self):
         _, xlsx_bytes = generate(_csv(_row(year="FY2026")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[str(CURRENT_YEAR)]
+        ws = wb[f"FY {CURRENT_YEAR}"]
         assert ws.cell(2, 1).value == CURRENT_YEAR
+
+
+class TestFiscalYearTabs:
+    def test_one_sheet_per_fiscal_year_ascending(self):
+        csv_bytes = _csv(
+            _row(year=2027, project="B Fund", status="Planned"),
+            _row(year=2026, project="A Fund", status="Planned"),
+            _row(year=2029, project="C Fund", status="Planned"),
+        )
+        _, xlsx_bytes = generate(csv_bytes)[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        assert wb.sheetnames == ["FY 2026", "FY 2027", "FY 2029"]
+
+    def test_august_current_fy_first_and_active(self):
+        with patch("reports.plans.date") as mock_date:
+            mock_date.today.return_value = date(2026, 8, 6)
+            _, xlsx_bytes = generate(
+                _csv(
+                    _row(year=2026, project="Past", status="Planned"),
+                    _row(year=2027, project="Current", status="Planned"),
+                    _row(year=2028, project="Future", status="Planned"),
+                )
+            )[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        assert wb.sheetnames == ["FY 2027", "FY 2028"]
+        assert wb.active.title == "FY 2027"
+        assert wb["FY 2027"].max_row == 2  # header + 1; FY 2026 row dropped

@@ -51,9 +51,7 @@ def _safe_str(val) -> str | None:
     return str(val)
 
 
-def _build_context(client: str, cur_df: pd.DataFrame, fut_df: pd.DataFrame) -> dict:
-    current_year = date.today().year
-
+def _build_context(client: str, fy_map: dict[int, pd.DataFrame]) -> dict:
     def _groups(df: pd.DataFrame) -> list[dict]:
         groups = []
         for status in STATUS_ORDER:
@@ -96,12 +94,9 @@ def _build_context(client: str, cur_df: pd.DataFrame, fut_df: pd.DataFrame) -> d
             )
         return groups
 
-    sections = []
-    if not cur_df.empty:
-        sections.append({"label": str(current_year), "groups": _groups(cur_df)})
-    if not fut_df.empty:
-        sections.append({"label": f"{current_year + 1}+", "groups": _groups(fut_df)})
-
+    sections = [
+        {"label": f"FY {year}", "groups": _groups(year_df)} for year, year_df in fy_map.items()
+    ]
     return {
         "client": client,
         "today": date.today().strftime("%B %d, %Y"),
@@ -111,8 +106,8 @@ def _build_context(client: str, cur_df: pd.DataFrame, fut_df: pd.DataFrame) -> d
 
 def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     results = []
-    for client, cur_df, fut_df in _load_data(csv_bytes):
-        ctx = _build_context(client, cur_df, fut_df)
+    for client, fy_map in _load_data(csv_bytes):
+        ctx = _build_context(client, fy_map)
         html = _jinja_env.get_template("plans_pdf.html").render(**ctx)
         pdf_bytes = HTML(string=html, base_url=str(_TEMPLATES_DIR)).write_pdf()
         results.append((client, pdf_bytes))
