@@ -109,6 +109,41 @@ class TestGenerateHappyPath:
         assert ws.cell(2, 6).value is None
 
 
+class TestExtraColumnsIgnored:
+    def test_collaborator_attachments_status_not_in_output(self):
+        header = (
+            "Year,Project,Funder name,Task type,Task Title,Due Date,"
+            "Collaborator(s),Attachments,Status"
+        )
+        rows = [
+            (
+                "FY 2026,HS/Edu,Scripps Family Fund,Report,Fin Report,07/31/2026,"
+                "Diana Silver,file.pdf,Incomplete"
+            ),
+            "FY 2027,HS/Edu,Big Fund,General,LOI Draft,08/15/2026,Diana Silver,,Not Started",
+        ]
+        csv_bytes = ("\n".join([header] + rows)).encode()
+        _, xlsx_bytes = generate(csv_bytes, _VALID_FILENAME)
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb.active
+        assert ws.max_column == 6
+        assert [ws.cell(1, c).value for c in range(1, 7)] == [
+            "Year",
+            "Project",
+            "Funder",
+            "Task Type",
+            "Task Name",
+            "Due Date",
+        ]
+        values = [
+            ws.cell(r, c).value
+            for r in range(1, ws.max_row + 1)
+            for c in range(1, ws.max_column + 1)
+        ]
+        for sentinel in ("Diana Silver", "file.pdf", "Incomplete", "Not Started"):
+            assert sentinel not in values
+
+
 # ---------------------------------------------------------------------------
 # Sort order
 # ---------------------------------------------------------------------------

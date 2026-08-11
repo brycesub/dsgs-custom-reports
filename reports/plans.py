@@ -46,6 +46,21 @@ OUTPUT_COLUMNS = [
     "Next Task/Deadline",
 ]
 
+# Excel number formats applied in _build_worksheet.
+_CURRENCY_FORMAT = '"$"#,##0'
+_DATE_FORMAT = "m/d/yy"
+
+
+def _current_fiscal_year(today: date) -> int:
+    """Return the current fiscal year number (July 1-June 30 convention)."""
+    return today.year + 1 if today.month >= 7 else today.year
+
+
+def _tab_sort_key(year: int, current_fy: int) -> tuple[int, int]:
+    """Order fiscal-year tabs: current first, then future ascending, then past
+    descending — e.g. with a current FY of 2027: 2027, 2028, 2029, 2026, 2025."""
+    return (0, year) if year >= current_fy else (1, -year)
+
 
 def _parse_year(val):
     """Parse a Year value to an int.
@@ -84,25 +99,28 @@ def _build_worksheet(ws, df):
             if col_name in ("Notif Expected", "Notif Received"):
                 if isinstance(val, datetime):
                     cell.value = val
-                    cell.number_format = "MM/DD/YYYY"
+                    cell.number_format = _DATE_FORMAT
                 else:
                     cell.value = None
             elif col_name in ("Request", "Award"):
                 cell.value = val
                 if val is not None:
-                    cell.number_format = "#,##0"
+                    cell.number_format = _CURRENCY_FORMAT
             else:
                 cell.value = None if (isinstance(val, float) and pd.isna(val)) else val
 
     autofit_columns(ws, OUTPUT_COLUMNS)
 
 
-def _load_data(csv_bytes: bytes) -> list[tuple[str, pd.DataFrame, pd.DataFrame]]:
+def _load_data(csv_bytes: bytes) -> list[tuple[str, dict[int, pd.DataFrame]]]:
     """Parse and validate a Plans CSV.
 
-    Returns a list of (client, cur_year_df, future_df) tuples, one per unique
-    client, where both DataFrames have OUTPUT_COLUMNS columns and rows are
-    sorted by STATUS_ORDER rank then Fund name.
+    Returns a list of (client, fy_map) tuples, one per unique client, where
+    fy_map maps fiscal-year numbers to DataFrames with OUTPUT_COLUMNS columns.
+    Rows are sorted by STATUS_ORDER rank then Fund name. Every fiscal year in
+    the file is included; fy_map is ordered current fiscal year first, then
+    future years ascending, then past years descending (e.g. 2027, 2028, 2029,
+    2026, 2025).
     """
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
@@ -136,39 +154,30 @@ def _load_data(csv_bytes: bytes) -> list[tuple[str, pd.DataFrame, pd.DataFrame]]
     status_rank = {s: i for i, s in enumerate(STATUS_ORDER)}
     out["_status_rank"] = out["Status"].map(status_rank).fillna(len(STATUS_ORDER))
     out = out.sort_values(["_status_rank", "Fund"], na_position="last")
-    out = out[out["Year"] >= date.today().year]
-    if out.empty:
-        raise ValueError(
-            f"No rows match {date.today().year} or later — "
-            "please check the file contains current data."
-        )
+    current_fy = _current_fiscal_year(date.today())
 
-    current_year = date.today().year
     results = []
     for client, client_df in out.groupby("_client"):
-        cur_df = client_df[client_df["Year"] == current_year][OUTPUT_COLUMNS].reset_index(drop=True)
-        fut_df = client_df[client_df["Year"] > current_year][OUTPUT_COLUMNS].reset_index(drop=True)
-        results.append((client, cur_df, fut_df))
+        years = sorted(client_df["Year"].unique(), key=lambda y: _tab_sort_key(y, current_fy))
+        fy_map = {
+            year: client_df[client_df["Year"] == year][OUTPUT_COLUMNS].reset_index(drop=True)
+            for year in years
+        }
+        results.append((client, fy_map))
     return results
 
 
 def generate(csv_bytes: bytes) -> list[tuple[str, bytes]]:
     results = []
-    current_year = date.today().year
-    future_label = f"{current_year + 1}+"
-
-    for client, cur_df, fut_df in _load_data(csv_bytes):
+    for client, fy_map in _load_data(csv_bytes):
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        ws_cur = wb.create_sheet(title=str(current_year))
-        _build_worksheet(ws_cur, cur_df)
+        for year, year_df in fy_map.items():
+            ws = wb.create_sheet(title=f"FY {year}")
+            _build_worksheet(ws, year_df)
 
-        if not fut_df.empty:
-            ws_fut = wb.create_sheet(title=future_label)
-            _build_worksheet(ws_fut, fut_df)
-
-        wb.active = wb[str(current_year)]
+        wb.active = wb[f"FY {next(iter(fy_map))}"]
 
         xlsx_buf = io.BytesIO()
         wb.save(xlsx_buf)

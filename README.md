@@ -6,7 +6,7 @@ Two reports are supported:
 
 | Report | Input | Output |
 |---|---|---|
-| **Plans** | Plans CSV export | One `.xlsx` per client (zipped if multiple), filtered to current year+, sorted by status then fund |
+| **Plans** | Plans CSV export | One `.xlsx` per client (zipped if multiple), one tab per FY, current FY first |
 | **Pipeline** | Pipeline CSV export | Single `.xlsx` sorted by due date |
 
 ---
@@ -62,7 +62,7 @@ ports:
 
 | Column | Notes |
 |---|---|
-| `Year` | Numeric (e.g. `2026`) |
+| `Year` | Numeric (e.g. `2027`; `FY 2027` prefixes tolerated) |
 | `Client` | Used to split output into per-client files |
 | `Funder name` | |
 | `Project` | Appears as "Fund" in the output |
@@ -77,8 +77,8 @@ ports:
 Extra columns in the CSV are ignored.
 
 **Processing:**
-- Rows with `Year` before the current calendar year are filtered out.
-- Rows are split into two sheets: **`{current_year}`** (active on open) and **`{next_year}+`** (omitted if empty).
+- Every fiscal year in the file gets a sheet, past ones included. Fiscal years run July 1 – June 30, so in August 2026 the current fiscal year is FY 2027.
+- Sheets are ordered current fiscal year first (left-most and active), then future years oldest to newest, then past years newest to oldest — e.g. **`FY 2027`**, `FY 2028`, `FY 2029`, `FY 2026`, `FY 2025`. A year with no rows gets no sheet.
 - Within each sheet, rows are sorted first by status rank, then alphabetically by Fund:
 
 | Rank | Status |
@@ -98,6 +98,7 @@ Extra columns in the CSV are ignored.
 **Output:**
 - Single client → `{Client}_report.xlsx`
 - Multiple clients → `reports.zip` containing one `.xlsx` per client
+- `Request`/`Award` amounts use Excel's **Currency** format (`$175,000`, whole dollars); `Notif Expected`/`Notif Received` render as `m/d/yy` (e.g. `6/30/26`).
 
 ---
 

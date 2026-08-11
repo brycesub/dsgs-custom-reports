@@ -47,7 +47,7 @@ Shared Excel utilities (header styling, column autofit, date parsing) live in `r
 
 ### plans report
 - Input CSV must have a `Client` column — one `.xlsx` is produced per unique client value. If multiple clients, `app.py` zips them.
-- Rows filtered to current year and forward; split into two sheets: `{current_year}` (active tab) and `{current_year+1}+`.
+- All rows kept; split into one sheet per fiscal year (July–June) labeled `FY {year}`. Tab order is current FY (left-most and active), then future years ascending, then past years descending.
 - Sorted by `STATUS_ORDER` rank, then alphabetically by `Fund` within each group.
 
 ### pipeline report
