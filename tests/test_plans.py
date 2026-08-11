@@ -107,21 +107,25 @@ class TestGenerateHappyPath:
 
 
 # ---------------------------------------------------------------------------
-# Year filtering
+# Year inclusion
 # ---------------------------------------------------------------------------
 
 
-class TestYearFiltering:
-    def test_past_year_rows_excluded(self):
+class TestYearInclusion:
+    def test_past_year_rows_get_their_own_sheet(self):
         # Two rows: one past (2025), one current (2026)
         _, xlsx_bytes = generate(_csv(_row(year=2025), _row(year=CURRENT_YEAR)))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[f"FY {CURRENT_YEAR}"]
-        assert ws.max_row == 2  # header + 1 row (2025 filtered out)
+        assert wb.sheetnames == [f"FY {CURRENT_YEAR}", "FY 2025"]
+        assert wb[f"FY {CURRENT_YEAR}"].max_row == 2  # header + 1 row
+        assert wb["FY 2025"].max_row == 2
 
-    def test_raises_when_all_rows_in_past(self):
-        with pytest.raises(ValueError, match="No rows match"):
-            generate(_csv(_row(year=2024), _row(year=2025)))
+    def test_all_past_rows_still_produce_a_workbook(self):
+        _, xlsx_bytes = generate(_csv(_row(year=2024), _row(year=2025)))[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        # Newest past year first; with no current/future year it is also active.
+        assert wb.sheetnames == ["FY 2025", "FY 2024"]
+        assert wb.active.title == "FY 2025"
 
     def test_future_rows_go_to_future_sheet(self):
         _, xlsx_bytes = generate(_csv(_row(year=FUTURE_YEAR)))[0]
@@ -246,11 +250,11 @@ class TestFiscalYearParsing:
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
         assert wb[f"FY {FUTURE_YEAR}"].max_row == 2
 
-    def test_fy_prefixed_past_year_excluded(self):
+    def test_fy_prefixed_past_year_kept_on_its_own_sheet(self):
         _, xlsx_bytes = generate(_csv(_row(year="FY 2025"), _row(year="FY 2026")))[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        ws = wb[f"FY {CURRENT_YEAR}"]
-        assert ws.max_row == 2  # FY 2025 filtered out
+        assert wb.sheetnames == [f"FY {CURRENT_YEAR}", "FY 2025"]
+        assert wb["FY 2025"].cell(2, 1).value == 2025
 
     def test_mixed_fy_and_plain_years_sort_together(self):
         # A plain 2026 and an "FY 2026" should land on the same sheet.
@@ -294,6 +298,40 @@ class TestFiscalYearTabs:
                 )
             )[0]
         wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
-        assert wb.sheetnames == ["FY 2027", "FY 2028"]
+        assert wb.sheetnames == ["FY 2027", "FY 2028", "FY 2026"]
         assert wb.active.title == "FY 2027"
-        assert wb["FY 2027"].max_row == 2  # header + 1; FY 2026 row dropped
+        assert wb["FY 2027"].max_row == 2  # header + 1
+
+    def test_future_years_ascend_then_past_years_descend(self):
+        with patch("reports.plans.date") as mock_date:
+            mock_date.today.return_value = date(2026, 8, 6)  # current FY 2027
+            _, xlsx_bytes = generate(
+                _csv(
+                    _row(year=2024, status="Planned"),
+                    _row(year=2029, status="Planned"),
+                    _row(year=2026, status="Planned"),
+                    _row(year=2028, status="Planned"),
+                    _row(year=2027, status="Planned"),
+                    _row(year=2025, status="Planned"),
+                )
+            )[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        assert wb.sheetnames == [
+            "FY 2027",
+            "FY 2028",
+            "FY 2029",
+            "FY 2026",
+            "FY 2025",
+            "FY 2024",
+        ]
+
+    def test_sort_order_preserved_within_a_past_year_sheet(self):
+        csv_bytes = _csv(
+            _row(year=2024, status="Planned", project="ZZZ Fund"),
+            _row(year=2024, status="Awarded - Active", project="AAA Fund"),
+        )
+        _, xlsx_bytes = generate(csv_bytes)[0]
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
+        ws = wb["FY 2024"]
+        assert ws.cell(2, 5).value == "Awarded - Active"
+        assert ws.cell(3, 5).value == "Planned"

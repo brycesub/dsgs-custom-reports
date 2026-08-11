@@ -6,7 +6,7 @@ Two reports are supported:
 
 | Report | Input | Output |
 |---|---|---|
-| **Plans** | Plans CSV export | One `.xlsx` per client (zipped if multiple), filtered to current fiscal year+, one tab per FY |
+| **Plans** | Plans CSV export | One `.xlsx` per client (zipped if multiple), one tab per FY, current FY first |
 | **Pipeline** | Pipeline CSV export | Single `.xlsx` sorted by due date |
 
 ---
@@ -77,8 +77,8 @@ ports:
 Extra columns in the CSV are ignored.
 
 **Processing:**
-- Rows tagged with a fiscal year before the current one are filtered out. Fiscal years run July 1 – June 30, so in August 2026 the current fiscal year is FY 2027.
-- Rows are split into one sheet per fiscal year — **`FY 2027`** (left-most and active), then **`FY 2028`**, etc. — each omitted if it has no rows.
+- Every fiscal year in the file gets a sheet, past ones included. Fiscal years run July 1 – June 30, so in August 2026 the current fiscal year is FY 2027.
+- Sheets are ordered current fiscal year first (left-most and active), then future years oldest to newest, then past years newest to oldest — e.g. **`FY 2027`**, `FY 2028`, `FY 2029`, `FY 2026`, `FY 2025`. A year with no rows gets no sheet.
 - Within each sheet, rows are sorted first by status rank, then alphabetically by Fund:
 
 | Rank | Status |

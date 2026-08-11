@@ -56,6 +56,12 @@ def _current_fiscal_year(today: date) -> int:
     return today.year + 1 if today.month >= 7 else today.year
 
 
+def _tab_sort_key(year: int, current_fy: int) -> tuple[int, int]:
+    """Order fiscal-year tabs: current first, then future ascending, then past
+    descending — e.g. with a current FY of 2027: 2027, 2028, 2029, 2026, 2025."""
+    return (0, year) if year >= current_fy else (1, -year)
+
+
 def _parse_year(val):
     """Parse a Year value to an int.
 
@@ -111,8 +117,10 @@ def _load_data(csv_bytes: bytes) -> list[tuple[str, dict[int, pd.DataFrame]]]:
 
     Returns a list of (client, fy_map) tuples, one per unique client, where
     fy_map maps fiscal-year numbers to DataFrames with OUTPUT_COLUMNS columns.
-    Rows are sorted by STATUS_ORDER rank then Fund name, and only fiscal years
-    at or after the current fiscal year are included.
+    Rows are sorted by STATUS_ORDER rank then Fund name. Every fiscal year in
+    the file is included; fy_map is ordered current fiscal year first, then
+    future years ascending, then past years descending (e.g. 2027, 2028, 2029,
+    2026, 2025).
     """
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
@@ -147,17 +155,13 @@ def _load_data(csv_bytes: bytes) -> list[tuple[str, dict[int, pd.DataFrame]]]:
     out["_status_rank"] = out["Status"].map(status_rank).fillna(len(STATUS_ORDER))
     out = out.sort_values(["_status_rank", "Fund"], na_position="last")
     current_fy = _current_fiscal_year(date.today())
-    out = out[out["Year"] >= current_fy]
-    if out.empty:
-        raise ValueError(
-            f"No rows match FY {current_fy} or later — please check the file contains current data."
-        )
 
     results = []
     for client, client_df in out.groupby("_client"):
+        years = sorted(client_df["Year"].unique(), key=lambda y: _tab_sort_key(y, current_fy))
         fy_map = {
-            year: year_df[OUTPUT_COLUMNS].reset_index(drop=True)
-            for year, year_df in client_df.groupby("Year")
+            year: client_df[client_df["Year"] == year][OUTPUT_COLUMNS].reset_index(drop=True)
+            for year in years
         }
         results.append((client, fy_map))
     return results
