@@ -4,7 +4,7 @@ import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+HEADER_FILL = PatternFill(start_color="1373AB", end_color="1373AB", fill_type="solid")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
 
 _DATE_FORMATS = ("%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d")

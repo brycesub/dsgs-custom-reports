@@ -55,7 +55,7 @@ class TestWriteHeaders:
         write_headers(self.ws, ["Col"])
         fill = self.ws.cell(1, 1).fill
         assert fill.fill_type == "solid"
-        assert "4472C4" in fill.fgColor.rgb
+        assert "1373AB" in fill.fgColor.rgb
 
     def test_center_alignment(self):
         write_headers(self.ws, ["Col"])
