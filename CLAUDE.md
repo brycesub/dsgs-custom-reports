@@ -55,6 +55,13 @@ Shared Excel utilities (header styling, column autofit, date parsing) live in `r
 - All rows included (no date filtering), single sheet named `Pipeline - YYYY-MM-DD`, sorted by Due Date ascending.
 - Download filename: `Pipeline_{client}_{date}.xlsx`.
 
+### research studies
+Read-only browser for the `arts-funder-research` repo's stand-alone HTML deliverables. `RESEARCH_DIR` (env) points at that checkout; docker-compose bind-mounts `../arts-funder-research` (override with `RESEARCH_HOST_DIR`) read-only at `/research`. Unset → empty index, artifact routes 404.
+
+- `research.py` (top level, no Flask): `list_studies()` scans `studies/*/` for dirs with `report.html`; title is the first `# ` line of `report.md`; network page is the first `viz/*.html` that isn't `template.html`.
+- `GET /research` renders `templates/research.html`; `GET /research/<slug>/<path>` serves a file only if `path` exactly matches that study's `report.html` or network page (whitelist — notes, data and `report.md` are never served). URLs mirror the study folder so the report's relative `viz/...` link works.
+- Local dev: `RESEARCH_DIR=../arts-funder-research .venv/bin/python app.py`.
+
 ### PDF rendering
 Preferred fonts for rendered PDFs are Merriweather (serif) and Roboto (sans-serif).
 

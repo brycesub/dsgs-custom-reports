@@ -3,6 +3,11 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      RESEARCH_DIR: /research
+    volumes:
+      # arts-funder-research checkout; new studies appear after a git pull, no rebuild
+      - ${RESEARCH_HOST_DIR:-../arts-funder-research}:/research:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
