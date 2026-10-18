@@ -11,16 +11,16 @@ _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 _jinja_env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescape=True)
 
 _ACCENT = {
-    "Awarded - Active": "#4472C4",
-    "Awarded - Closed": "#4472C4",
-    "Application Submitted": "#93afd4",
-    "LOI Submitted": "#93afd4",
-    "Application In Progress": "#93afd4",
-    "LOI In Progress": "#93afd4",
-    "Planned": "#c5d5ee",
-    "Researching": "#c5d5ee",
-    "Declined": "#c5d5ee",
-    "Abandoned": "#c5d5ee",
+    "Awarded - Active": "#1580BD",
+    "Awarded - Closed": "#1580BD",
+    "Application Submitted": "#7FB6DD",
+    "LOI Submitted": "#7FB6DD",
+    "Application In Progress": "#7FB6DD",
+    "LOI In Progress": "#7FB6DD",
+    "Planned": "#CFE3F2",
+    "Researching": "#CFE3F2",
+    "Declined": "#CFE3F2",
+    "Abandoned": "#CFE3F2",
 }
 
 
@@ -88,7 +88,7 @@ def _build_context(client: str, fy_map: dict[int, pd.DataFrame]) -> dict:
             groups.append(
                 {
                     "status": status,
-                    "accent": _ACCENT.get(status, "#c5d5ee"),
+                    "accent": _ACCENT.get(status, "#CFE3F2"),
                     "rows": rows,
                 }
             )

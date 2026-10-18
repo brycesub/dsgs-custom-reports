@@ -69,6 +69,10 @@ Logo assets for use in PDFs live in `templates/`:
 - `DS_Logo_Primary.png`
 - `DS_Logo_Alt.png`
 - `DS_Logo_Secondary2.png`
+- `DS_Logo_Alt_White.png` (white, for the blue header band; also in `static/` for the web pages)
+
+### brand
+Shared with the `arts-funder-research` report and network pages, light mode only. Logo blue `#1580BD` for rules and marks; `#1373AB` behind white text (header bands, table and Excel headers); `#0F6A9E` for buttons, links and small blue text; tint `#EAF3FA`; ink `#1A1A2E`; page background `#F4F8FB`. Headings Merriweather, body Roboto.
 
 ### adding a new report
 1. Create `reports/<name>.py` with a `generate()` function; import shared helpers from `reports/_utils.py`.
