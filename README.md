@@ -52,6 +52,21 @@ ports:
 
 ---
 
+## Funder research studies
+
+`GET /research` is a browsable index of the funder-landscape studies from the [arts-funder-research](https://github.com/brycesub/arts-funder-research) repo, linked from the home page. Each study gets a **Report** and a **Network** link; only those two stand-alone HTML files are served — research notes, raw data and Markdown sources stay private.
+
+The app reads the studies from the directory in `RESEARCH_DIR`:
+
+```bash
+# Local dev
+RESEARCH_DIR=../arts-funder-research python app.py
+```
+
+`docker-compose.yml` bind-mounts `../arts-funder-research` read-only at `/research` (set `RESEARCH_HOST_DIR` to use another path). New or rebuilt studies show up as soon as the checkout is updated with `git pull` — no image rebuild.
+
+---
+
 ## Reports
 
 ### Plans report
@@ -158,17 +173,20 @@ Logo assets live in `templates/`:
 
 ```
 app.py                  # Flask routes (HTTP concerns only)
+research.py             # Funder research: list_studies(root), resolve_artifact(root, slug, path)
 reports/
     _utils.py           # Shared helpers: parse_date, write_headers, autofit_columns
     plans.py            # Plans report: generate(csv_bytes) → [(client, xlsx_bytes), ...]
     pipeline.py         # Pipeline report: generate(csv_bytes, filename) → (client, xlsx_bytes)
 templates/
     index.html          # Single-page UI with drag-and-drop upload cards
+    research.html       # Index of funder research studies
 tests/
     test_utils.py       # Unit tests for _utils helpers
     test_plans.py       # Unit tests for plans report logic
     test_pipeline.py    # Unit tests for pipeline report logic
     test_app.py         # Integration tests for Flask routes
+    test_research.py    # Study discovery and /research routes
 Dockerfile
 docker-compose.yml
 requirements.txt        # Runtime dependencies

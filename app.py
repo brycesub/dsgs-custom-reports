@@ -1,16 +1,19 @@
 import io
+import os
 import zipfile
 from datetime import date
 
-from flask import Flask, render_template, request, send_file
+from flask import Flask, abort, render_template, request, send_file
 
 from reports.pipeline import generate as generate_pipeline
 from reports.pipeline_pdf import generate as generate_pipeline_pdf
 from reports.plans import generate as generate_plans
 from reports.plans_pdf import generate as generate_plans_pdf
+from research import list_studies, resolve_artifact
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB upload limit
+app.config["RESEARCH_DIR"] = os.environ.get("RESEARCH_DIR")  # arts-funder-research checkout
 
 
 def _get_csv_file():
@@ -25,6 +28,19 @@ def _get_csv_file():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/research")
+def research_index():
+    return render_template("research.html", studies=list_studies(app.config["RESEARCH_DIR"]))
+
+
+@app.route("/research/<slug>/<path:artifact>")
+def research_artifact(slug, artifact):
+    path = resolve_artifact(app.config["RESEARCH_DIR"], slug, artifact)
+    if path is None:
+        abort(404)
+    return send_file(path, mimetype="text/html")
 
 
 @app.route("/generate/plans", methods=["POST"])
