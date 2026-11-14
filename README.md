@@ -54,7 +54,7 @@ ports:
 
 ## Funder research studies
 
-`GET /research` is a browsable index of the funder-landscape studies from the [arts-funder-research](https://github.com/brycesub/arts-funder-research) repo, linked from the home page. Each study gets a **Report** and a **Network** link; only those two stand-alone HTML files are served — research notes, raw data and Markdown sources stay private.
+`GET /research` is a browsable index of the funder-landscape studies and campaign strategy reports from the [arts-funder-research](https://github.com/brycesub/arts-funder-research) repo, linked from the home page. Each study gets a **Report** link, plus a **Network** link when the study has a network page (strategy reports such as the KCRep capital campaign study have none); only those two stand-alone HTML files are served — research notes, raw data and Markdown sources stay private.
 
 The app reads the studies from the directory in `RESEARCH_DIR`:
 
